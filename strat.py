@@ -99,18 +99,18 @@ class AlgoEvent:
         #self.evt.consoleLog(f"lower: {lower_bband}")
         #self.evt.consoleLog(f"bbw: {bbw}")
         
-        # check for sell signal (price crosses upper bband and rsi > 70)
-        if lastprice >= upper_bband:
+        # check for sell signal (price cross upper bband from above and rsi > 70)
+        if lastprice <= upper_bband and arr_close[-2] >= upper_bband:
             # caclulate the rsi
             rsi = self.find_rsi(arr_close, self.rsi_len)
             self.evt.consoleLog(f"rsi: {rsi}")
             # check for rsi
-            if rsi > 60:
+            if rsi > 70:
                 self.test_sendOrder(lastprice, -1, 'open', self.find_positionSize(lastprice, is_sequeeze))
                 self.evt.consoleLog(f"SELL SELL SELL SELL")
                 
-        # check for buy signal (price crosses lower bband and rsi < 30)
-        if lastprice <= lower_bband:
+        # check for buy signal (price cross lower bband from below and rsi < 30)
+        if lastprice >= lower_bband and arr_close[-2] <= upper_bband:
             # caclulate the rsi
             rsi = self.find_rsi(arr_close, self.rsi_len)
             self.evt.consoleLog(f"rsi: {rsi}")
@@ -131,18 +131,9 @@ class AlgoEvent:
     
     
     def find_rsi(self, arr_close, window_size):
-        # we use previous day's close price as today's open price, which is not entirely accurate
-        deltas = numpy.diff(arr_close)
-        gains = deltas * (deltas > 0)
-        losses = -deltas * (deltas < 0)
-    
-        avg_gain = numpy.mean(gains[:window_size])
-        avg_loss = numpy.mean(losses[:window_size])
-    
-        rs = avg_gain / avg_loss
-        rsi = 100 - (100 / (1 + rs))
-    
-        return rsi
+        rsi_arr = talib.RSI(arr_close, window_size)
+        cur_rsi = rsi_arr[-1]
+        return cur_rsi
         
         
     def test_sendOrder(self, lastprice, buysell, openclose, volume = 10):
